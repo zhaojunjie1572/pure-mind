@@ -3,8 +3,21 @@ const App = {
     goldlines: [],
     actions: [],
     currentView: 'dashboard',
-    currentLayer: null
+    currentLayer: null,
+    agents: {}
   },
+
+  layerConfigs: [
+    { name: '目标匹配', icon: '🎯' },
+    { name: '信息检索', icon: '🔍' },
+    { name: '逻辑解析', icon: '🧩' },
+    { name: '路径推理', icon: '🛤️' },
+    { name: '权力允许', icon: '💪' },
+    { name: '规则边界', icon: '⚖️' },
+    { name: '金线节点', icon: '✨' },
+    { name: '勇猛精进', icon: '⚡' },
+    { name: '心念神气', icon: '🧘' }
+  ],
 
   init() {
     this.loadFromStorage();
@@ -19,6 +32,7 @@ const App = {
         const parsed = JSON.parse(stored);
         this.data.goldlines = parsed.goldlines || [];
         this.data.actions = parsed.actions || [];
+        this.data.agents = parsed.agents || {};
       }
     } catch (e) {
       console.log('No data found, starting fresh');
@@ -28,7 +42,8 @@ const App = {
   saveToStorage() {
     localStorage.setItem('pureMindData', JSON.stringify({
       goldlines: this.data.goldlines,
-      actions: this.data.actions
+      actions: this.data.actions,
+      agents: this.data.agents
     }));
   },
 
@@ -72,28 +87,35 @@ const App = {
   },
 
   showLayerModal(layerIndex) {
-    const layerNames = [
-      '目标匹配',
-      '信息检索',
-      '逻辑解析',
-      '路径推理',
-      '权力允许',
-      '规则边界',
-      '金线节点',
-      '勇猛精进',
-      '心念神气'
-    ];
+    const config = this.layerConfigs[layerIndex];
+    const agent = this.data.agents[layerIndex] || this.getDefaultAgent(layerIndex);
     
     const modal = document.createElement('div');
     modal.className = 'modal-overlay show';
     modal.innerHTML = `
-      <div class="modal">
+      <div class="modal" style="max-width: 700px;">
         <div class="modal-header">
-          <h2>第${layerIndex + 1}层 - ${layerNames[layerIndex]}</h2>
+          <h2>${config.icon} 第${layerIndex + 1}层 - ${config.name}</h2>
           <button class="close-btn" onclick="this.closest('.modal-overlay').remove(); Pagoda.resetLayer(${layerIndex});">×</button>
         </div>
         <div class="modal-body">
-          ${this.getLayerContent(layerIndex)}
+          <div class="tabs">
+            <button class="tab active" onclick="App.switchTab(this, 'content', ${layerIndex})">内容</button>
+            <button class="tab" onclick="App.switchTab(this, 'agent', ${layerIndex})">Agent配置</button>
+            <button class="tab" onclick="App.switchTab(this, 'chat', ${layerIndex})">对话</button>
+          </div>
+          
+          <div id="tab-content-${layerIndex}" class="tab-content">
+            ${this.getLayerContent(layerIndex)}
+          </div>
+          
+          <div id="tab-agent-${layerIndex}" class="tab-content" style="display: none;">
+            ${this.renderAgentConfig(layerIndex, agent)}
+          </div>
+          
+          <div id="tab-chat-${layerIndex}" class="tab-content" style="display: none;">
+            ${this.renderLayerChat(layerIndex, agent)}
+          </div>
         </div>
       </div>
     `;
@@ -106,6 +128,263 @@ const App = {
         Pagoda.resetLayer(layerIndex);
       }
     });
+  },
+
+  switchTab(btn, tabName, layerIndex) {
+    btn.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    btn.parentElement.parentElement.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById(`tab-${tabName}-${layerIndex}`).style.display = 'block';
+  },
+
+  getDefaultAgent(layerIndex) {
+    const prompts = {
+      0: '你是一个目标匹配专家。帮助用户明确目标，分析内心渴望，评估匹配度。',
+      1: '你是一个信息检索专家。帮助用户搜索、收集、整理关键信息。',
+      2: '你是一个逻辑解析专家。帮助用户拆解本质，分析因果，构建逻辑框架。',
+      3: '你是一个路径推理专家。帮助用户探索可能性，评估路径，确定最优方案。',
+      4: '你是一个权力允许专家。帮助用户认识能力边界，自我授权，利用资源。',
+      5: '你是一个规则边界专家。帮助用户识别法律边界、道德底线、时间和成本限制。',
+      6: '你是一个金线节点专家。帮助用户规划节点，设定目标，确定依赖关系。',
+      7: '你是一个勇猛精进专家。帮助用户制定行动计划，保持节奏，持续推进。',
+      8: '你是一个心念神气专家。帮助用户调整状态，记录感受，保持内心平衡。'
+    };
+    
+    return {
+      name: this.layerConfigs[layerIndex].name + ' Agent',
+      systemPrompt: prompts[layerIndex],
+      provider: 'deepseek',
+      model: 'deepseek-chat',
+      apiKey: '',
+      apiUrl: '',
+      temperature: 0.7,
+      maxTokens: 2000,
+      chatHistory: []
+    };
+  },
+
+  renderAgentConfig(layerIndex, agent) {
+    return `
+      <div class="form-group">
+        <label>Agent名称</label>
+        <input type="text" id="agent-name-${layerIndex}" value="${agent.name || ''}" placeholder="Agent名称">
+      </div>
+      
+      <div class="form-group">
+        <label>System Prompt</label>
+        <textarea id="agent-prompt-${layerIndex}" rows="4" placeholder="系统提示词">${agent.systemPrompt || ''}</textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>Provider</label>
+        <div class="provider-radios">
+          <label><input type="radio" name="agent-provider-${layerIndex}" value="deepseek" ${agent.provider === 'deepseek' ? 'checked' : ''}> DeepSeek</label>
+          <label><input type="radio" name="agent-provider-${layerIndex}" value="minimax" ${agent.provider === 'minimax' ? 'checked' : ''}> MiniMax</label>
+          <label><input type="radio" name="agent-provider-${layerIndex}" value="openai" ${agent.provider === 'openai' ? 'checked' : ''}> OpenAI兼容</label>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Model</label>
+        <input type="text" id="agent-model-${layerIndex}" value="${agent.model || ''}" placeholder="模型名称">
+      </div>
+      
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="agent-key-${layerIndex}" value="${agent.apiKey || ''}" placeholder="API密钥">
+      </div>
+      
+      <div class="form-group">
+        <label>API URL (可选)</label>
+        <input type="text" id="agent-url-${layerIndex}" value="${agent.apiUrl || ''}" placeholder="API地址">
+      </div>
+      
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label>Temperature</label>
+          <input type="number" id="agent-temp-${layerIndex}" value="${agent.temperature || 0.7}" step="0.1" min="0" max="2" style="width: 100%;">
+        </div>
+        <div>
+          <label>Max Tokens</label>
+          <input type="number" id="agent-maxtokens-${layerIndex}" value="${agent.maxTokens || 2000}" step="100" min="100" style="width: 100%;">
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button class="btn primary" onclick="App.saveAgentConfig(${layerIndex})">保存配置</button>
+        <button class="btn" onclick="App.exportAgentConfig(${layerIndex})">导出JSON</button>
+        <label class="btn" style="cursor: pointer;"><input type="file" accept=".json" onchange="App.importAgentConfig(event, ${layerIndex})" style="display: none;">导入JSON</label>
+      </div>
+    `;
+  },
+
+  renderLayerChat(layerIndex, agent) {
+    const history = agent.chatHistory || [];
+    return `
+      <div class="chat-body" id="layer-chat-${layerIndex}" style="height: 400px; border: 1px solid rgba(100, 100, 200, 0.3); border-radius: 8px; margin-bottom: 12px;">
+        ${history.length === 0 ? '<div class="empty">开始与Agent对话吧</div>' : history.map(msg => `
+          <div class="chat-message ${msg.role}">
+            <div class="msg-content">${msg.content.replace(/\n/g, '<br>')}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="chat-input-area" style="padding: 0;">
+        <textarea id="layer-chat-input-${layerIndex}" rows="2" placeholder="输入你的问题..." style="flex: 1;"></textarea>
+        <button class="btn primary" onclick="App.sendLayerMessage(${layerIndex})">发送</button>
+      </div>
+    `;
+  },
+
+  saveAgentConfig(layerIndex) {
+    const provider = document.querySelector(`input[name="agent-provider-${layerIndex}"]:checked`)?.value || 'deepseek';
+    const agent = {
+      name: document.getElementById(`agent-name-${layerIndex}`).value,
+      systemPrompt: document.getElementById(`agent-prompt-${layerIndex}`).value,
+      provider,
+      model: document.getElementById(`agent-model-${layerIndex}`).value,
+      apiKey: document.getElementById(`agent-key-${layerIndex}`).value,
+      apiUrl: document.getElementById(`agent-url-${layerIndex}`).value,
+      temperature: parseFloat(document.getElementById(`agent-temp-${layerIndex}`).value),
+      maxTokens: parseInt(document.getElementById(`agent-maxtokens-${layerIndex}`).value),
+      chatHistory: this.data.agents[layerIndex]?.chatHistory || []
+    };
+    
+    this.data.agents[layerIndex] = agent;
+    this.saveToStorage();
+    alert('Agent配置已保存！');
+  },
+
+  exportAgentConfig(layerIndex) {
+    const agent = this.data.agents[layerIndex] || this.getDefaultAgent(layerIndex);
+    const dataStr = JSON.stringify(agent, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `agent-layer-${layerIndex + 1}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
+  importAgentConfig(event, layerIndex) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const agent = JSON.parse(e.target.result);
+        this.data.agents[layerIndex] = agent;
+        this.saveToStorage();
+        alert('Agent配置已导入！');
+        this.openLayer(layerIndex);
+        const modal = document.querySelector('.modal-overlay.show');
+        if (modal && modal !== document.getElementById('settingsModal') && modal !== document.getElementById('chatModal')) {
+          modal.remove();
+        }
+      } catch (err) {
+        alert('JSON文件格式错误！');
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  async sendLayerMessage(layerIndex) {
+    const input = document.getElementById(`layer-chat-input-${layerIndex}`);
+    const content = input.value.trim();
+    if (!content) return;
+    input.value = '';
+    
+    const chatBody = document.getElementById(`layer-chat-${layerIndex}`);
+    this.addChatMessageToElement(chatBody, 'user', content);
+    
+    const agent = this.data.agents[layerIndex] || this.getDefaultAgent(layerIndex);
+    if (!agent.chatHistory) agent.chatHistory = [];
+    agent.chatHistory.push({ role: 'user', content });
+    
+    this.addChatMessageToElement(chatBody, 'loading', '思考中...');
+    
+    try {
+      const response = await this.callAgentAPI(agent, agent.chatHistory);
+      
+      const loadingMsgs = chatBody.querySelectorAll('.chat-message.loading');
+      loadingMsgs.forEach(m => m.remove());
+      
+      if (response) {
+        this.addChatMessageToElement(chatBody, 'assistant', response);
+        agent.chatHistory.push({ role: 'assistant', content: response });
+        this.data.agents[layerIndex] = agent;
+        this.saveToStorage();
+      } else {
+        this.addChatMessageToElement(chatBody, 'error', '请求失败');
+      }
+    } catch (err) {
+      const loadingMsgs = chatBody.querySelectorAll('.chat-message.loading');
+      loadingMsgs.forEach(m => m.remove());
+      this.addChatMessageToElement(chatBody, 'error', '请求失败: ' + err.message);
+    }
+  },
+
+  addChatMessageToElement(element, role, content) {
+    const div = document.createElement('div');
+    div.className = `chat-message ${role}`;
+    div.innerHTML = `<div class="msg-content">${content.replace(/\n/g, '<br>')}</div>`;
+    const empty = element.querySelector('.empty');
+    if (empty) empty.remove();
+    element.appendChild(div);
+    element.scrollTop = element.scrollHeight;
+  },
+
+  async callAgentAPI(agent, messages) {
+    let endpoint, body, headers;
+    
+    if (agent.provider === 'minimax') {
+      endpoint = agent.apiUrl || 'https://api.minimax.chat/v1/text/chatcompletion_pro';
+      body = {
+        model: agent.model || 'abab6.5s-chat',
+        messages: messages,
+        temperature: agent.temperature || 0.7,
+        tokens_to_generate: agent.maxTokens || 2000
+      };
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + agent.apiKey
+      };
+    } else if (agent.provider === 'deepseek') {
+      endpoint = agent.apiUrl || 'https://api.deepseek.com/chat/completions';
+      body = {
+        model: agent.model || 'deepseek-chat',
+        messages: agent.systemPrompt ? [{ role: 'system', content: agent.systemPrompt }, ...messages] : messages,
+        temperature: agent.temperature || 0.7,
+        max_tokens: agent.maxTokens || 2000
+      };
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + agent.apiKey
+      };
+    } else {
+      endpoint = agent.apiUrl || 'https://api.openai.com/v1/chat/completions';
+      body = {
+        model: agent.model || 'gpt-4',
+        messages: agent.systemPrompt ? [{ role: 'system', content: agent.systemPrompt }, ...messages] : messages,
+        temperature: agent.temperature || 0.7,
+        max_tokens: agent.maxTokens || 2000
+      };
+      headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + agent.apiKey
+      };
+    }
+    
+    const resp = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+    const data = await resp.json();
+    
+    if (data.choices?.[0]?.message?.content) {
+      return data.choices[0].message.content;
+    } else if (data.reply) {
+      return data.reply;
+    }
+    return null;
   },
 
   getLayerContent(layerIndex) {
@@ -141,7 +420,7 @@ const App = {
           <option value="low">不匹配</option>
         </select>
       </div>
-      <button class="btn primary" onclick="App.saveGoalMatch()">确认目标</button>
+      <button class="btn primary" onclick="App.saveGoalMatch()">保存</button>
     `;
   },
 
@@ -164,7 +443,7 @@ const App = {
         <label>🔗 信息来源</label>
         <input type="text" id="infoSource" placeholder="来源链接或出处">
       </div>
-      <button class="btn primary" onclick="App.saveInfoRetrieve()">保存信息</button>
+      <button class="btn primary" onclick="App.saveInfoRetrieve()">保存</button>
     `;
   },
 
@@ -182,7 +461,7 @@ const App = {
         <label>📊 逻辑框架</label>
         <textarea id="logicFramework" rows="3" placeholder="构建你的逻辑框架..."></textarea>
       </div>
-      <button class="btn primary" onclick="App.saveLogicParse()">保存解析</button>
+      <button class="btn primary" onclick="App.saveLogicParse()">保存</button>
     `;
   },
 
@@ -200,7 +479,7 @@ const App = {
         <label>🎯 最优路径</label>
         <textarea id="bestPath" rows="3" placeholder="确定最优路径..."></textarea>
       </div>
-      <button class="btn primary" onclick="App.savePathReason()">确定路径</button>
+      <button class="btn primary" onclick="App.savePathReason()">保存</button>
     `;
   },
 
@@ -218,7 +497,7 @@ const App = {
         <label>🌟 资源支持</label>
         <textarea id="resourceSupport" rows="3" placeholder="你有什么资源可以利用？"></textarea>
       </div>
-      <button class="btn primary" onclick="App.savePowerAllow()">确认权限</button>
+      <button class="btn primary" onclick="App.savePowerAllow()">保存</button>
     `;
   },
 
@@ -240,7 +519,7 @@ const App = {
         <label>💰 成本约束</label>
         <textarea id="costConstraint" rows="2" placeholder="成本约束是什么？"></textarea>
       </div>
-      <button class="btn primary" onclick="App.saveRuleBoundary()">划定边界</button>
+      <button class="btn primary" onclick="App.saveRuleBoundary()">保存</button>
     `;
   },
 
@@ -342,18 +621,6 @@ const App = {
         </div>
         <button class="btn" onclick="alert('心念记录已保存！')">记录心念</button>
       </div>
-      <div style="margin-top:24px">
-        <h3>⚙️ 系统设置</h3>
-        <div class="form-group">
-          <label>⭐ 星星数量</label>
-          <input type="range" min="100" max="500" value="300" onchange="AuroraConfig.setStarsCount(this.value)">
-        </div>
-        <div class="form-group">
-          <label>🌈 极光强度</label>
-          <input type="range" min="0" max="2" step="0.1" value="1.5" onchange="AuroraConfig.setAuroraIntensity(this.value)">
-        </div>
-        <button class="btn danger" onclick="if(confirm('确定清除所有数据？')){App.clearAllData()}">清除数据</button>
-      </div>
     `;
   },
 
@@ -367,47 +634,23 @@ const App = {
     }
   },
 
-  saveGoalMatch() {
-    alert('🎯 目标已确认！');
-  },
-
-  saveInfoRetrieve() {
-    alert('🔍 信息已保存！');
-  },
-
-  saveLogicParse() {
-    alert('🧩 逻辑已解析！');
-  },
-
-  savePathReason() {
-    alert('🛤️ 路径已确定！');
-  },
-
-  savePowerAllow() {
-    alert('💪 权限已确认！');
-  },
-
-  saveRuleBoundary() {
-    alert('⚖️ 边界已划定！');
-  },
+  saveGoalMatch() { alert('🎯 目标已确认！'); },
+  saveInfoRetrieve() { alert('🔍 信息已保存！'); },
+  saveLogicParse() { alert('🧩 逻辑已解析！'); },
+  savePathReason() { alert('🛤️ 路径已确定！'); },
+  savePowerAllow() { alert('💪 权限已确认！'); },
+  saveRuleBoundary() { alert('⚖️ 边界已划定！'); },
 
   createGoldNode() {
     const name = document.getElementById('nodeName').value;
-    const position = document.getElementById('nodePosition').value;
-    const goal = document.getElementById('nodeGoal').value;
-    const dependency = document.getElementById('nodeDependency').value;
-    
-    if (!name) {
-      alert('请输入节点名称！');
-      return;
-    }
+    if (!name) { alert('请输入节点名称！'); return; }
     
     const goldline = {
       id: Date.now().toString(),
       name,
-      position,
-      path: goal,
-      dependency,
+      position: document.getElementById('nodePosition')?.value,
+      path: document.getElementById('nodeGoal')?.value,
+      dependency: document.getElementById('nodeDependency')?.value,
       created: new Date().toISOString().split('T')[0],
       progress: 0
     };
@@ -426,16 +669,12 @@ const App = {
 
   createAction() {
     const name = document.getElementById('todayAction').value;
-    
-    if (!name) {
-      alert('请输入行动名称！');
-      return;
-    }
+    if (!name) { alert('请输入行动名称！'); return; }
     
     const action = {
       id: Date.now().toString(),
       name,
-      rhythm: document.getElementById('actionRhythm').value,
+      rhythm: document.getElementById('actionRhythm')?.value || 'maintain',
       progress: 0,
       completed: false,
       today: true
@@ -453,13 +692,6 @@ const App = {
       action.completed = !action.completed;
       this.saveToStorage();
     }
-  },
-
-  clearAllData() {
-    this.data.goldlines = [];
-    this.data.actions = [];
-    this.saveToStorage();
-    alert('数据已清除！');
   },
 
   loadApiSettings() {
@@ -498,8 +730,7 @@ const App = {
     closeSettings();
   },
 
-  render() {
-  },
+  render() {},
 
   chatHistory: [],
 
@@ -535,7 +766,7 @@ const App = {
 
     if (provider === 'minimax') {
       endpoint = 'https://api.minimax.chat/v1/text/chatcompletion_pro';
-      body = { model: settings.minimaxModel || 'minimax', messages: [{ role: 'user', content: msg }] };
+      body = { model: settings.minimaxModel || 'abab6.5s-chat', messages: [{ role: 'user', content: msg }] };
       if (settings.minimaxKey) headers['Authorization'] = 'Bearer ' + settings.minimaxKey;
     } else if (provider === 'deepseek') {
       endpoint = 'https://api.deepseek.com/chat/completions';
