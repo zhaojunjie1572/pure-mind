@@ -73,15 +73,15 @@ const App = {
 
   showLayerModal(layerIndex) {
     const layerNames = [
-      '信息输入',
-      '逻辑推理',
+      '目标匹配',
+      '信息检索',
+      '逻辑解析',
+      '路径推理',
+      '权力允许',
       '规则边界',
-      '确立金线',
-      '金线库',
-      '行动节奏',
-      '进度追踪',
-      '模块进化',
-      '系统设置'
+      '金线节点',
+      '勇猛精进',
+      '心念神气'
     ];
     
     const modal = document.createElement('div');
@@ -110,142 +110,204 @@ const App = {
 
   getLayerContent(layerIndex) {
     const contents = [
-      this.renderInputLayer(),
-      this.renderReasoningLayer(),
-      this.renderRulesLayer(),
-      this.renderConfirmLayer(),
-      this.renderGoldlinesLayer(),
-      this.renderActionsLayer(),
-      this.renderProgressLayer(),
-      this.renderEvolutionLayer(),
-      this.renderSettingsLayer()
+      this.renderGoalMatchLayer(),
+      this.renderInfoRetrieveLayer(),
+      this.renderLogicParseLayer(),
+      this.renderPathReasonLayer(),
+      this.renderPowerAllowLayer(),
+      this.renderRuleBoundaryLayer(),
+      this.renderGoldNodeLayer(),
+      this.renderVigorousAdvanceLayer(),
+      this.renderMindSpiritLayer()
     ];
     return contents[layerIndex] || '<p>功能开发中...</p>';
   },
 
-  renderInputLayer() {
+  renderGoalMatchLayer() {
     return `
       <div class="form-group">
-        <label>来源类型</label>
-        <select id="inputType">
-          <option value="article">文章</option>
-          <option value="book">书籍</option>
-          <option value="video">视频</option>
-          <option value="thought">想法</option>
+        <label>🎯 当前目标</label>
+        <textarea id="currentGoal" rows="3" placeholder="明确你想要达成的目标..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>💫 内心渴望</label>
+        <textarea id="innerDesire" rows="3" placeholder="这背后真正的渴望是什么？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>⚡ 匹配度</label>
+        <select id="goalMatch">
+          <option value="high">高度匹配</option>
+          <option value="medium">部分匹配</option>
+          <option value="low">不匹配</option>
+        </select>
+      </div>
+      <button class="btn primary" onclick="App.saveGoalMatch()">确认目标</button>
+    `;
+  },
+
+  renderInfoRetrieveLayer() {
+    return `
+      <div class="form-group">
+        <label>🔍 检索方向</label>
+        <select id="searchDirection">
+          <option value="book">书籍文献</option>
+          <option value="web">网络资料</option>
+          <option value="experience">个人经验</option>
+          <option value="mentor">请教导师</option>
         </select>
       </div>
       <div class="form-group">
-        <label>信息内容</label>
-        <textarea id="inputContent" rows="6" placeholder="输入你想蒸馏的信息..."></textarea>
+        <label>📚 关键信息</label>
+        <textarea id="keyInfo" rows="5" placeholder="记录收集到的关键信息..."></textarea>
       </div>
       <div class="form-group">
-        <label>来源链接（可选）</label>
-        <input type="text" id="inputUrl" placeholder="https://...">
+        <label>🔗 信息来源</label>
+        <input type="text" id="infoSource" placeholder="来源链接或出处">
       </div>
-      <button class="btn primary" onclick="App.saveInput()">保存信息</button>
+      <button class="btn primary" onclick="App.saveInfoRetrieve()">保存信息</button>
     `;
   },
 
-  renderReasoningLayer() {
+  renderLogicParseLayer() {
     return `
       <div class="form-group">
-        <label>这是什么？（本质定义）</label>
-        <textarea id="reasonWhat" rows="3" placeholder="用一句话定义本质"></textarea>
+        <label>🧩 本质拆解</label>
+        <textarea id="essenceParse" rows="3" placeholder="拆解事物的本质..."></textarea>
       </div>
       <div class="form-group">
-        <label>为什么重要？（价值判断）</label>
-        <textarea id="reasonWhy" rows="3" placeholder="为什么这对你重要吗？"></textarea>
+        <label>🔄 因果分析</label>
+        <textarea id="causeEffect" rows="3" placeholder="分析因果关系..."></textarea>
       </div>
       <div class="form-group">
-        <label>如何实现？（路径设计）</label>
-        <textarea id="reasonHow" rows="3" placeholder="具体如何做到呢？"></textarea>
+        <label>📊 逻辑框架</label>
+        <textarea id="logicFramework" rows="3" placeholder="构建你的逻辑框架..."></textarea>
       </div>
-      <button class="btn primary" onclick="App.saveReasoning()">保存推理</button>
+      <button class="btn primary" onclick="App.saveLogicParse()">保存解析</button>
     `;
   },
 
-  renderRulesLayer() {
+  renderPathReasonLayer() {
     return `
       <div class="form-group">
-        <label>⚖️ 法律风险</label>
-        <textarea id="ruleLegal" rows="2" placeholder="有什么法律风险？"></textarea>
+        <label>🛤️ 可能路径</label>
+        <textarea id="possiblePaths" rows="4" placeholder="列出所有可能的路径..."></textarea>
       </div>
       <div class="form-group">
-        <label>🎯 道德底线</label>
-        <textarea id="ruleMoral" rows="2" placeholder="你的道德底线是什么？"></textarea>
+        <label>⚖️ 路径评估</label>
+        <textarea id="pathEval" rows="3" placeholder="评估各路径的优劣..."></textarea>
       </div>
       <div class="form-group">
-        <label>✅ 自我允许</label>
-        <textarea id="ruleAllow" rows="2" placeholder="你允许自己做什么？"></textarea>
+        <label>🎯 最优路径</label>
+        <textarea id="bestPath" rows="3" placeholder="确定最优路径..."></textarea>
       </div>
-      <button class="btn primary" onclick="App.saveRules()">保存规则</button>
+      <button class="btn primary" onclick="App.savePathReason()">确定路径</button>
     `;
   },
 
-  renderConfirmLayer() {
+  renderPowerAllowLayer() {
     return `
       <div class="form-group">
-        <label>金线名称</label>
-        <input type="text" id="goldlineName" placeholder="给这条金线起个名字">
+        <label>💪 能力边界</label>
+        <textarea id="powerBoundary" rows="3" placeholder="你有什么能力？边界在哪里？"></textarea>
       </div>
       <div class="form-group">
-        <label>核心路径</label>
-        <textarea id="goldlinePath" rows="4" placeholder="描述核心路径..."></textarea>
+        <label>✅ 自我授权</label>
+        <textarea id="selfAuthorize" rows="3" placeholder="你允许自己做什么？"></textarea>
       </div>
       <div class="form-group">
-        <label>行动节奏</label>
-        <select id="goldlineRhythm">
-          <option value="sprint">冲刺</option>
-          <option value="maintain">保持</option>
-          <option value="rest">休整</option>
+        <label>🌟 资源支持</label>
+        <textarea id="resourceSupport" rows="3" placeholder="你有什么资源可以利用？"></textarea>
+      </div>
+      <button class="btn primary" onclick="App.savePowerAllow()">确认权限</button>
+    `;
+  },
+
+  renderRuleBoundaryLayer() {
+    return `
+      <div class="form-group">
+        <label>⚖️ 法律边界</label>
+        <textarea id="legalBoundary" rows="2" placeholder="法律上的边界是什么？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>🎭 道德底线</label>
+        <textarea id="moralBoundary" rows="2" placeholder="你的道德底线是什么？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>⏰ 时间限制</label>
+        <textarea id="timeLimit" rows="2" placeholder="时间上的限制是什么？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>💰 成本约束</label>
+        <textarea id="costConstraint" rows="2" placeholder="成本约束是什么？"></textarea>
+      </div>
+      <button class="btn primary" onclick="App.saveRuleBoundary()">划定边界</button>
+    `;
+  },
+
+  renderGoldNodeLayer() {
+    return `
+      <div class="form-group">
+        <label>✨ 节点名称</label>
+        <input type="text" id="nodeName" placeholder="给这个金线节点起个名字">
+      </div>
+      <div class="form-group">
+        <label>📍 节点位置</label>
+        <input type="text" id="nodePosition" placeholder="这是第几个节点？">
+      </div>
+      <div class="form-group">
+        <label>🎯 节点目标</label>
+        <textarea id="nodeGoal" rows="3" placeholder="这个节点要达成什么？"></textarea>
+      </div>
+      <div class="form-group">
+        <label>🔗 前置依赖</label>
+        <textarea id="nodeDependency" rows="2" placeholder="前置条件是什么？"></textarea>
+      </div>
+      <button class="btn primary" onclick="App.createGoldNode()">✨ 确立节点</button>
+      <div style="margin-top:16px">
+        ${this.data.goldlines.length === 0 
+          ? '<p class="empty">还没有金线节点</p>'
+          : this.data.goldlines.map(gl => `
+            <div class="goldline-card">
+              <h3>${gl.name}</h3>
+              <p>${gl.path || ''}</p>
+              <div class="card-footer">
+                <button class="btn small" onclick="App.deleteGoldline('${gl.id}')">删除</button>
+              </div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+  },
+
+  renderVigorousAdvanceLayer() {
+    return `
+      <div class="form-group">
+        <label>⚡ 今日行动</label>
+        <input type="text" id="todayAction" placeholder="今天要做什么？">
+      </div>
+      <div class="form-group">
+        <label>🏃 行动节奏</label>
+        <select id="actionRhythm">
+          <option value="sprint">🔥 冲刺</option>
+          <option value="maintain">⚡ 保持</option>
+          <option value="rest">🌙 休整</option>
         </select>
       </div>
-      <button class="btn primary" onclick="App.createGoldline()">✨ 确立金线</button>
-    `;
-  },
-
-  renderGoldlinesLayer() {
-    let list = this.data.goldlines.length === 0 
-      ? '<p class="empty">还没有金线，快去确立吧！</p>'
-      : this.data.goldlines.map(gl => `
-        <div class="goldline-card">
-          <h3>${gl.name}</h3>
-          <p>${gl.path}</p>
-          <div class="card-footer">
-            <span class="tag ${gl.rhythm}">${gl.rhythm}</span>
-            <button class="btn small" onclick="App.deleteGoldline('${gl.id}')">删除</button>
-          </div>
-        </div>
-      `).join('');
-    return list;
-  },
-
-  renderActionsLayer() {
-    return `
-      <div class="form-group">
-        <label>关联金线</label>
-        <select id="actionGoldline">
-          <option value="">选择金线...</option>
-          ${this.data.goldlines.map(gl => `<option value="${gl.id}">${gl.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>行动名称</label>
-        <input type="text" id="actionName" placeholder="做什么？">
-      </div>
-      <button class="btn primary" onclick="App.createAction()">添加行动</button>
-      <div class="actions-list">
-        ${this.data.actions.map(a => `
-          <div class="action-item">
-            <input type="checkbox" ${a.completed ? 'checked' : ''} onchange="App.toggleAction('${a.id}')">
-            <span class="${a.completed ? 'completed' : ''}">${a.name}</span>
-          </div>
-        `).join('')}
+      <button class="btn primary" onclick="App.createAction()">开始行动</button>
+      <div class="actions-list" style="margin-top:16px">
+        ${this.data.actions.length === 0 
+          ? '<p class="empty">还没有行动</p>'
+          : this.data.actions.map(a => `
+            <div class="action-item">
+              <input type="checkbox" ${a.completed ? 'checked' : ''} onchange="App.toggleAction('${a.id}')">
+              <span class="${a.completed ? 'completed' : ''}">${a.name}</span>
+            </div>
+          `).join('')}
       </div>
     `;
   },
 
-  renderProgressLayer() {
+  renderMindSpiritLayer() {
     const total = this.data.goldlines.length;
     const completed = this.data.actions.filter(a => a.completed).length;
     const progress = total > 0 ? Math.round((completed / (this.data.actions.length || 1)) * 100) : 0;
@@ -253,7 +315,7 @@ const App = {
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-value">${total}</div>
-          <div class="stat-label">金线数量</div>
+          <div class="stat-label">金线节点</div>
         </div>
         <div class="stat-card">
           <div class="stat-value">${this.data.actions.length}</div>
@@ -268,40 +330,30 @@ const App = {
           <div class="stat-label">完成率</div>
         </div>
       </div>
-    `;
-  },
-
-  renderEvolutionLayer() {
-    return `
-      <h3>🔄 模块进化</h3>
-      <p>这里记录你的系统版本和优化历史</p>
-      <div class="evolution-log">
-        <div class="log-item">
-          <span class="version">v1.0</span>
-          <span>初始版本 - 九层佛塔架构</span>
+      <div style="margin-top:24px">
+        <h3>🧘 心念状态</h3>
+        <div class="form-group">
+          <label>✨ 当下感受</label>
+          <textarea id="currentFeeling" rows="3" placeholder="记录你当下的心念状态..."></textarea>
         </div>
+        <div class="form-group">
+          <label>💫 神气校准</label>
+          <textarea id="spiritCalibrate" rows="3" placeholder="如何调整你的状态？"></textarea>
+        </div>
+        <button class="btn" onclick="alert('心念记录已保存！')">记录心念</button>
       </div>
-      <button class="btn" onclick="alert('进化功能开发中...')">检查更新</button>
-    `;
-  },
-
-  renderSettingsLayer() {
-    return `
-      <div class="form-group">
-        <label>🌙 主题</label>
-        <select>
-          <option>深色科技</option>
-        </select>
+      <div style="margin-top:24px">
+        <h3>⚙️ 系统设置</h3>
+        <div class="form-group">
+          <label>⭐ 星星数量</label>
+          <input type="range" min="100" max="500" value="300" onchange="AuroraConfig.setStarsCount(this.value)">
+        </div>
+        <div class="form-group">
+          <label>🌈 极光强度</label>
+          <input type="range" min="0" max="2" step="0.1" value="1.5" onchange="AuroraConfig.setAuroraIntensity(this.value)">
+        </div>
+        <button class="btn danger" onclick="if(confirm('确定清除所有数据？')){App.clearAllData()}">清除数据</button>
       </div>
-      <div class="form-group">
-        <label>⭐ 星星数量</label>
-        <input type="range" min="100" max="500" value="300" onchange="AuroraConfig.setStarsCount(this.value)">
-      </div>
-      <div class="form-group">
-        <label>🌈 极光强度</label>
-        <input type="range" min="0" max="2" step="0.1" value="1.5" onchange="AuroraConfig.setAuroraIntensity(this.value)">
-      </div>
-      <button class="btn danger" onclick="if(confirm('确定清除所有数据？')){App.clearAllData()}">清除数据</button>
     `;
   },
 
@@ -315,56 +367,65 @@ const App = {
     }
   },
 
-  saveInput() {
-    alert('信息已保存！');
+  saveGoalMatch() {
+    alert('🎯 目标已确认！');
   },
 
-  saveReasoning() {
-    alert('推理已保存！');
+  saveInfoRetrieve() {
+    alert('🔍 信息已保存！');
   },
 
-  saveRules() {
-    alert('规则已保存！');
+  saveLogicParse() {
+    alert('🧩 逻辑已解析！');
   },
 
-  createGoldline() {
-    const name = document.getElementById('goldlineName').value;
-    const path = document.getElementById('goldlinePath').value;
-    const rhythm = document.getElementById('goldlineRhythm').value;
+  savePathReason() {
+    alert('🛤️ 路径已确定！');
+  },
+
+  savePowerAllow() {
+    alert('💪 权限已确认！');
+  },
+
+  saveRuleBoundary() {
+    alert('⚖️ 边界已划定！');
+  },
+
+  createGoldNode() {
+    const name = document.getElementById('nodeName').value;
+    const position = document.getElementById('nodePosition').value;
+    const goal = document.getElementById('nodeGoal').value;
+    const dependency = document.getElementById('nodeDependency').value;
     
     if (!name) {
-      alert('请输入金线名称！');
+      alert('请输入节点名称！');
       return;
     }
     
     const goldline = {
       id: Date.now().toString(),
       name,
-      path,
-      rhythm,
-      info: {},
-      reasoning: {},
-      rules: {},
-      actions: [],
+      position,
+      path: goal,
+      dependency,
       created: new Date().toISOString().split('T')[0],
       progress: 0
     };
     
     this.data.goldlines.push(goldline);
     this.saveToStorage();
-    alert('✨ 金线已确立！');
-    this.openLayer(3);
+    alert('✨ 金线节点已确立！');
+    this.openLayer(6);
   },
 
   deleteGoldline(id) {
     this.data.goldlines = this.data.goldlines.filter(g => g.id !== id);
     this.saveToStorage();
-    this.openLayer(4);
+    this.openLayer(6);
   },
 
   createAction() {
-    const goldlineId = document.getElementById('actionGoldline').value;
-    const name = document.getElementById('actionName').value;
+    const name = document.getElementById('todayAction').value;
     
     if (!name) {
       alert('请输入行动名称！');
@@ -373,9 +434,8 @@ const App = {
     
     const action = {
       id: Date.now().toString(),
-      goldline_id: goldlineId,
       name,
-      rhythm: 'maintain',
+      rhythm: document.getElementById('actionRhythm').value,
       progress: 0,
       completed: false,
       today: true
@@ -383,8 +443,8 @@ const App = {
     
     this.data.actions.push(action);
     this.saveToStorage();
-    alert('行动已添加！');
-    this.openLayer(5);
+    alert('⚡ 行动已启动！');
+    this.openLayer(7);
   },
 
   toggleAction(id) {
