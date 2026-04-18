@@ -1,0 +1,15 @@
+{
+  "name": "aurora-pagoda-system",
+  "version": "1.0.0",
+  "description": "极光星空操作系统 - 3D佛塔可视化",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": ["3d", "threejs", "visualization"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

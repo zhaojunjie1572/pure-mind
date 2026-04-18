@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000/js/modules/aurora.js)",
+      "Bash(pkill -f \"serve \\\\.\")",
+      "Bash(npx serve *)",
+      "Bash(curl -s http://localhost:3000/js/app.js)"
+    ]
+  }
+}
