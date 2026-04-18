@@ -85,7 +85,7 @@ const App = {
     ];
     
     const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
+    modal.className = 'modal-overlay show';
     modal.innerHTML = `
       <div class="modal">
         <div class="modal-header">
