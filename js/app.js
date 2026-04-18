@@ -139,26 +139,26 @@ const App = {
 
   getDefaultAgent(layerIndex) {
     const prompts = {
-      0: '你是一个目标匹配专家。帮助用户明确目标，分析内心渴望，评估匹配度。',
-      1: '你是一个信息检索专家。帮助用户搜索、收集、整理关键信息。',
-      2: '你是一个逻辑解析专家。帮助用户拆解本质，分析因果，构建逻辑框架。',
-      3: '你是一个路径推理专家。帮助用户探索可能性，评估路径，确定最优方案。',
-      4: '你是一个权力允许专家。帮助用户认识能力边界，自我授权，利用资源。',
-      5: '你是一个规则边界专家。帮助用户识别法律边界、道德底线、时间和成本限制。',
-      6: '你是一个金线节点专家。帮助用户规划节点，设定目标，确定依赖关系。',
-      7: '你是一个勇猛精进专家。帮助用户制定行动计划，保持节奏，持续推进。',
-      8: '你是一个心念神气专家。帮助用户调整状态，记录感受，保持内心平衡。'
+      0: "你是一个目标匹配专家。帮助用户明确目标，分析内心渴望，评估匹配度。",
+      1: "你是一个信息检索专家。帮助用户搜索、收集、整理关键信息。",
+      2: "你是一个逻辑解析专家。帮助用户拆解本质，分析因果，构建逻辑框架。",
+      3: "你是一个路径推理专家。帮助用户探索可能性，评估路径，确定最优方案。",
+      4: "你是一个权力允许专家。帮助用户认识能力边界，自我授权，利用资源。",
+      5: "你是一个规则边界专家。帮助用户识别法律边界、道德底线、时间和成本限制。",
+      6: "你是一个金线节点专家。帮助用户规划节点，设定目标，确定依赖关系。",
+      7: "你是一个勇猛精进专家。帮助用户制定行动计划，保持节奏，持续推进。",
+      8: "你是一个心念神气专家。帮助用户调整状态，记录感受，保持内心平衡。"
     };
     
     return {
-      name: this.layerConfigs[layerIndex].name + ' Agent',
+      name: this.layerConfigs[layerIndex].name + " Agent",
       systemPrompt: prompts[layerIndex],
-      provider: 'deepseek',
-      model: 'deepseek-chat',
-      apiKey: '',
-      apiUrl: '',
+      provider: "minimax",
+      model: "MiniMax-M2.7",
+      apiKey: "",
+      apiUrl: "",
       temperature: 0.7,
-      maxTokens: 2000,
+      maxTokens: 1000,
       chatHistory: []
     };
   },
@@ -337,49 +337,74 @@ const App = {
 
   async callAgentAPI(agent, messages) {
     let endpoint, body, headers;
-    
-    if (agent.provider === 'minimax') {
-      endpoint = agent.apiUrl || 'https://api.minimax.chat/v1/text/chatcompletion_pro';
+
+    if (agent.provider === "minimax") {
+      // MiniMax Anthropic兼容API
+      endpoint = agent.apiUrl || "https://api.minimaxi.com/anthropic/v1/messages";
+      
+      // 准备消息格式
+      const formattedMessages = messages.map(m => ({
+        role: m.role,
+        content: [
+          {
+            type: "text",
+            text: m.content
+          }
+        ]
+      }));
+
       body = {
-        model: agent.model || 'abab6.5s-chat',
-        messages: messages,
+        model: agent.model || "MiniMax-M2.7",
+        messages: formattedMessages,
+        max_tokens: agent.maxTokens || 1000,
         temperature: agent.temperature || 0.7,
-        tokens_to_generate: agent.maxTokens || 2000
+        system: agent.systemPrompt || ""
       };
+
       headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + agent.apiKey
+        "Content-Type": "application/json",
+        "x-api-key": agent.apiKey || "",
+        "Authorization": `Bearer ${agent.apiKey || ""}`
       };
-    } else if (agent.provider === 'deepseek') {
-      endpoint = agent.apiUrl || 'https://api.deepseek.com/chat/completions';
+    } else if (agent.provider === "deepseek") {
+      endpoint = agent.apiUrl || "https://api.deepseek.com/chat/completions";
       body = {
-        model: agent.model || 'deepseek-chat',
-        messages: agent.systemPrompt ? [{ role: 'system', content: agent.systemPrompt }, ...messages] : messages,
+        model: agent.model || "deepseek-chat",
+        messages: agent.systemPrompt ? [{ role: "system", content: agent.systemPrompt }, ...messages] : messages,
         temperature: agent.temperature || 0.7,
         max_tokens: agent.maxTokens || 2000
       };
       headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + agent.apiKey
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${agent.apiKey}`
       };
     } else {
-      endpoint = agent.apiUrl || 'https://api.openai.com/v1/chat/completions';
+      endpoint = agent.apiUrl || "https://api.openai.com/v1/chat/completions";
       body = {
-        model: agent.model || 'gpt-4',
-        messages: agent.systemPrompt ? [{ role: 'system', content: agent.systemPrompt }, ...messages] : messages,
+        model: agent.model || "gpt-4",
+        messages: agent.systemPrompt ? [{ role: "system", content: agent.systemPrompt }, ...messages] : messages,
         temperature: agent.temperature || 0.7,
         max_tokens: agent.maxTokens || 2000
       };
       headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + agent.apiKey
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${agent.apiKey}`
       };
     }
-    
-    const resp = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
-    const data = await resp.json();
-    
-    if (data.choices?.[0]?.message?.content) {
+
+    const response = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+    const data = await response.json();
+
+    // 处理不同API的响应格式
+    if (agent.provider === "minimax") {
+      // MiniMax Anthropic兼容API响应格式
+      if (data.content && Array.isArray(data.content)) {
+        return data.content
+          .filter(block => block.type === "text")
+          .map(block => block.text)
+          .join("");
+      }
+    } else if (data.choices?.[0]?.message?.content) {
       return data.choices[0].message.content;
     } else if (data.reply) {
       return data.reply;
@@ -769,9 +794,23 @@ const App = {
     let endpoint = '', body = {}, headers = { 'Content-Type': 'application/json' };
 
     if (provider === 'minimax') {
-      endpoint = 'https://api.minimax.chat/v1/text/chatcompletion_pro';
-      body = { model: settings.minimaxModel || 'abab6.5s-chat', messages: [{ role: 'user', content: msg }] };
-      if (settings.minimaxKey) headers['Authorization'] = 'Bearer ' + settings.minimaxKey;
+      // MiniMax Anthropic兼容API
+      endpoint = 'https://api.minimaxi.com/anthropic/v1/messages';
+      body = {
+        model: settings.minimaxModel || 'MiniMax-M2.7',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: msg }
+          ]
+        }],
+        max_tokens: 1000,
+        temperature: 0.7
+      };
+      if (settings.minimaxKey) {
+        headers['x-api-key'] = settings.minimaxKey;
+        headers['Authorization'] = `Bearer ${settings.minimaxKey}`;
+      }
     } else if (provider === 'deepseek') {
       endpoint = 'https://api.deepseek.com/chat/completions';
       body = { model: settings.deepseekModel || 'deepseek-chat', messages: [{ role: 'user', content: msg }] };
@@ -788,8 +827,20 @@ const App = {
       const data = await resp.json();
       const msgs = document.querySelectorAll('.chat-message.loading');
       msgs.forEach(m => m.remove());
-      if (data.choices?.[0]?.message?.content) {
-        this.addChatMessage('assistant', data.choices[0].message.content);
+
+      let reply = '';
+      if (provider === 'minimax') {
+        if (data.content && Array.isArray(data.content)) {
+          reply = data.content.filter(block => block.type === 'text').map(block => block.text).join('');
+        }
+      } else if (data.choices?.[0]?.message?.content) {
+        reply = data.choices[0].message.content;
+      } else {
+        reply = JSON.stringify(data);
+      }
+
+      if (reply) {
+        this.addChatMessage('assistant', reply);
         document.getElementById('statusDot').className = 'status-dot connected';
         document.getElementById('statusText').textContent = '已连接';
       } else {
@@ -808,11 +859,31 @@ const App = {
 
   async fetchModels(provider) {
     const settings = JSON.parse(localStorage.getItem('apiSettings') || '{}');
-    let endpoint = '', headers = { 'Content-Type': 'application/json' };
+    const selectId = provider + 'Model';
+    const select = document.getElementById(selectId);
+
     if (provider === 'minimax') {
-      endpoint = 'https://api.minimax.chat/v1/models';
-      if (settings.minimaxKey) headers['Authorization'] = 'Bearer ' + settings.minimaxKey;
-    } else if (provider === 'deepseek') {
+      // MiniMax Anthropic兼容API - 直接使用预设模型列表
+      const miniMaxModels = [
+        'MiniMax-M2.7',
+        'MiniMax-M2.7-highspeed',
+        'MiniMax-M2.5',
+        'MiniMax-M2.5-highspeed',
+        'MiniMax-M2.1',
+        'MiniMax-M2.1-highspeed',
+        'MiniMax-M2'
+      ];
+      select.innerHTML = miniMaxModels.map(m => `<option value="${m}">${m}</option>`).join('');
+      if (settings[selectId]) {
+        select.value = settings[selectId];
+      } else {
+        select.value = 'MiniMax-M2.7';
+      }
+      return;
+    }
+
+    let endpoint = '', headers = { 'Content-Type': 'application/json' };
+    if (provider === 'deepseek') {
       endpoint = 'https://api.deepseek.com/v1/models';
       if (settings.deepseekKey) headers['Authorization'] = 'Bearer ' + settings.deepseekKey;
     } else {
@@ -823,8 +894,6 @@ const App = {
     try {
       const resp = await fetch(endpoint, { headers });
       const data = await resp.json();
-      const selectId = provider + 'Model';
-      const select = document.getElementById(selectId);
       if (data.data) {
         const models = data.data.map(m => m.id);
         select.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -835,7 +904,6 @@ const App = {
         select.innerHTML = '<option value="">无法加载</option>';
       }
     } catch (e) {
-      const select = document.getElementById(provider + 'Model');
       select.innerHTML = '<option value="">加载失败</option>';
     }
   }
