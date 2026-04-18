@@ -92,6 +92,16 @@
           <input type="text" id="openaiKey" placeholder="输入 API Key...">
         </div>
       </div>
+      <div class="form-group" style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(100,100,200,0.2)">
+        <label>📋 GitHub Gist 同步</label>
+        <input type="text" id="gistToken" placeholder="GitHub Personal Access Token">
+        <input type="text" id="gistId" placeholder="Gist ID（可选，留空自动创建）" style="margin-top:8px">
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn primary" onclick="exportToGist()" style="flex:1">📤 同步到Gist</button>
+          <button class="btn" onclick="importFromGist()" style="flex:1">📥 从Gist导入</button>
+        </div>
+        <div id="gistStatus" style="margin-top:8px;font-size:12px;color:rgba(200,200,255,0.7)"></div>
+      </div>
       <button class="btn primary" onclick="saveSettings()" style="margin-top:16px;width:100%">保存设置</button>
     </div>
   </div>

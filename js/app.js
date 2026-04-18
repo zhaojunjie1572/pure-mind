@@ -706,6 +706,8 @@ const App = {
         document.getElementById('minimaxModel').value = settings.minimaxModel || '';
         document.getElementById('deepseekModel').value = settings.deepseekModel || '';
         document.getElementById('openaiModel').value = settings.openaiModel || '';
+        document.getElementById('gistToken').value = settings.gistToken || '';
+        document.getElementById('gistId').value = settings.gistId || '';
         const radios = document.querySelectorAll('input[name="provider"]');
         radios.forEach(r => r.checked = r.value === settings.activeProvider);
       }
@@ -723,6 +725,8 @@ const App = {
       minimaxModel: document.getElementById('minimaxModel').value,
       deepseekModel: document.getElementById('deepseekModel').value,
       openaiModel: document.getElementById('openaiModel').value,
+      gistToken: document.getElementById('gistToken').value.trim(),
+      gistId: document.getElementById('gistId').value.trim(),
       activeProvider: document.querySelector('input[name="provider"]:checked')?.value || 'minimax'
     };
     localStorage.setItem('apiSettings', JSON.stringify(settings));
@@ -863,4 +867,151 @@ function closeChat() {
 
 function sendMessage() {
   App.sendMessage();
+}
+
+async function exportToGist() {
+  const status = document.getElementById('gistStatus');
+  status.textContent = '正在同步到Gist...';
+  status.style.color = 'rgba(255, 215, 0, 0.9)';
+
+  try {
+    const settings = JSON.parse(localStorage.getItem('apiSettings') || '{}');
+    const token = settings.gistToken || document.getElementById('gistToken').value;
+    const existingGistId = settings.gistId || document.getElementById('gistId').value;
+
+    if (!token) {
+      status.textContent = '请先设置GitHub Personal Access Token！';
+      status.style.color = 'rgba(255, 100, 100, 0.9)';
+      return;
+    }
+
+    const pureMindData = JSON.parse(localStorage.getItem('pureMindData') || '{}');
+    
+    const gistData = {
+      description: 'Pure Mind - 九层佛塔系统 Agent配置',
+      public: false,
+      files: {
+        'pure-mind-agents.json': {
+          content: JSON.stringify({
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            data: pureMindData
+          }, null, 2)
+        },
+        'README.md': {
+          content: `# Pure Mind - 九层佛塔系统
+
+导出时间: ${new Date().toLocaleString('zh-CN')}
+
+## 数据结构
+- agents: 9个层级的Agent配置
+- goldlines: 金线节点
+- actions: 行动记录
+`
+        }
+      }
+    };
+
+    let gistId = existingGistId;
+    let method = 'POST';
+    let url = 'https://api.github.com/gists';
+    
+    if (existingGistId) {
+      method = 'PATCH';
+      url = `https://api.github.com/gists/${existingGistId}`;
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify(gistData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    gistId = result.id;
+
+    const apiSettings = JSON.parse(localStorage.getItem('apiSettings') || '{}');
+    apiSettings.gistId = gistId;
+    localStorage.setItem('apiSettings', JSON.stringify(apiSettings));
+    document.getElementById('gistId').value = gistId;
+
+    status.innerHTML = `✅ 同步成功！<br>Gist ID: <code style="color:rgba(255,215,0,0.9)">${gistId}</code><br><a href="${result.html_url}" target="_blank" style="color:rgba(150,150,255,0.9);text-decoration:underline">在GitHub查看</a>`;
+    status.style.color = 'rgba(100, 255, 100, 0.9)';
+  } catch (e) {
+    status.textContent = '❌ 同步失败: ' + e.message;
+    status.style.color = 'rgba(255, 100, 100, 0.9)';
+  }
+}
+
+async function importFromGist() {
+  const status = document.getElementById('gistStatus');
+  status.textContent = '正在从Gist导入...';
+  status.style.color = 'rgba(255, 215, 0, 0.9)';
+
+  try {
+    const settings = JSON.parse(localStorage.getItem('apiSettings') || '{}');
+    const token = settings.gistToken || document.getElementById('gistToken').value;
+    const gistId = settings.gistId || document.getElementById('gistId').value;
+
+    if (!token) {
+      status.textContent = '请先设置GitHub Personal Access Token！';
+      status.style.color = 'rgba(255, 100, 100, 0.9)';
+      return;
+    }
+    if (!gistId) {
+      status.textContent = '请先设置Gist ID！';
+      status.style.color = 'rgba(255, 100, 100, 0.9)';
+      return;
+    }
+
+    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    const agentFile = result.files['pure-mind-agents.json'];
+    
+    if (!agentFile) {
+      throw new Error('Gist中未找到pure-mind-agents.json文件');
+    }
+
+    const importedData = JSON.parse(agentFile.content);
+    
+    if (importedData.data) {
+      localStorage.setItem('pureMindData', JSON.stringify(importedData.data));
+      
+      if (App && App.loadFromStorage) {
+        App.loadFromStorage();
+      }
+
+      status.innerHTML = `✅ 导入成功！<br>导入时间: ${new Date().toLocaleString('zh-CN')}`;
+      status.style.color = 'rgba(100, 255, 100, 0.9)';
+      
+      setTimeout(() => {
+        alert('导入成功！请刷新页面查看更新。');
+      }, 500);
+    } else {
+      throw new Error('无效的数据格式');
+    }
+  } catch (e) {
+    status.textContent = '❌ 导入失败: ' + e.message;
+    status.style.color = 'rgba(255, 100, 100, 0.9)';
+  }
 }
